@@ -81,6 +81,38 @@ body {
 
 .link-quiet:hover { color: var(--ink); }
 
+/* —— top navigation —— */
+.topnav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.nav-link {
+  position: relative;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 4px 2px;
+}
+
+.nav-link:hover { color: var(--ink); }
+
+.nav-badge {
+  display: inline-block;
+  min-width: 18px;
+  padding: 1px 6px;
+  margin-left: 4px;
+  border-radius: 999px;
+  background: var(--ember-deep);
+  color: #fff7ed;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  vertical-align: middle;
+}
+
 .stage { padding-top: 20px; }
 
 /* —— kiln silhouette row —— */
@@ -130,6 +162,28 @@ body {
   filter: drop-shadow(0 0 6px #f59e0b);
 }
 .kiln-chip.status-drawn .kiln-svg { color: #6b6358; opacity: 0.75; }
+
+/* 持未核销帖：待点火 */
+.kiln-chip.has-permit {
+  border-color: rgba(224, 122, 47, 0.55);
+  box-shadow: 0 0 0 1px rgba(224, 122, 47, 0.18), 0 0 18px rgba(224, 122, 47, 0.18);
+}
+
+.kiln-chip.has-permit .kiln-svg { color: #f0a35e; }
+
+.kiln-spark {
+  fill: none;
+  stroke: #fbbf24;
+  stroke-width: 2;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px #f59e0b);
+  animation: spark-flicker 1.6s ease-in-out infinite;
+}
+
+@keyframes spark-flicker {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
 .kiln-code-svg {
   fill: #f0e6d8;
   font-size: 10px;
@@ -461,4 +515,87 @@ input, select, textarea {
 @media (max-width: 640px) {
   .timeline-head { flex-direction: column; align-items: stretch; }
   .kiln-chip { min-width: 132px; }
+}
+
+/* —— ignition permits page —— */
+.permit-page { display: grid; gap: 18px; }
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+
+.filter-tabs { display: flex; gap: 8px; flex-shrink: 0; }
+
+.btn.is-tab-active {
+  background: var(--ember);
+  color: #1a0f06;
+}
+
+.permit-count { color: var(--ember); font-variant-numeric: tabular-nums; }
+
+.permit-new h2 { margin: 0 0 12px; font-size: 1.05rem; }
+
+.permit-new-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.permit-note { margin: 0; }
+
+.permit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.permit-card {
+  display: grid;
+  gap: 10px;
+}
+
+.permit-card.is-open { border-color: rgba(224, 122, 47, 0.5); }
+.permit-card.is-revoked { opacity: 0.62; }
+
+.permit-card-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+.permit-no {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #ffedd5;
+  font-variant-numeric: tabular-nums;
+}
+
+.state-open { color: #fdba74; font-weight: 700; }
+.state-revoked { color: var(--muted); font-size: 0.88rem; }
+
+.permit-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 0;
+}
+
+.permit-meta > div { display: grid; gap: 2px; }
+.permit-meta dt { font-size: 0.75rem; color: var(--muted); }
+.permit-meta dd { margin: 0; font-size: 0.92rem; }
+
+.permit-revoke { margin: 0; }
+
+.permit-ok { color: #fdba74; }
+
+@media (max-width: 640px) {
+  .permit-new-grid { grid-template-columns: 1fr; }
+  .topnav { gap: 10px; }
 }

@@ -7,7 +7,9 @@
     <label>炭窑
       <select name="clamp_id" required>
         {% for clamp in clamps %}
-        <option value="{{ clamp.id }}" {% if preselect_clamp_id == clamp.id %}selected{% endif %}>{{ clamp.code }}</option>
+        <option value="{{ clamp.id }}" {% if preselect_clamp_id == clamp.id %}selected{% endif %}>
+          {{ clamp.code }}{% if clamp.status == 'stacked' %}{% if clamp.id in open_permit_clamp_ids %} · 待点火（已持未核销帖）{% else %} · 已码窑·缺点火许可帖{% endif %}{% endif %}
+        </option>
         {% endfor %}
       </select>
     </label>
@@ -23,7 +25,7 @@
     <label>备注
       <textarea name="notes" rows="3"></textarea>
     </label>
-    <p class="hint">出炭要求最近班次峰值 ≥ 400℃；本表只登记班次。</p>
+    <p class="hint">已码窑须持一张未核销点火许可帖；写入首笔班次时在同一事务内核销并转为焖烧中。焖烧中追加班次免帖。出炭仍要求最近班次峰值 ≥ 400℃。</p>
     <div class="actions">
       <button type="submit">写入时间轴</button>
       <button type="button" class="btn ghost" onclick="closeDrawer()">取消</button>

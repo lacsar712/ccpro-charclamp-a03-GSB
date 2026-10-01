@@ -12,6 +12,17 @@
     <p class="hint">{{ clamp.notes }}</p>
     {% endif %}
 
+    {% if clamp.status == 'stacked' %}
+      {% if open_permit %}
+      <p class="hint permit-ok">
+        持未核销点火许可帖 <strong>{{ open_permit.permit_no }}</strong>（{{ open_permit.opened_on.strftime('%Y-%m-%d') }} 开帖），
+        登记首笔班次时会同事务核销并转入焖烧中。
+      </p>
+      {% else %}
+      <p class="hint warn">该窑尚无未核销点火许可帖，首笔班次无法登记；请由管理员先到「点火许可」开帖。</p>
+      {% endif %}
+    {% endif %}
+
     <div class="drawer-actions-stack">
       <button
         type="button"

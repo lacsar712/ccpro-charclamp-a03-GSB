@@ -23,5 +23,7 @@ session_auth = SessionAuth[User, ServerSideSessionBackend](
     session_backend_config=ServerSideSessionConfig(
         session_id_bytes=32,
     ),
-    exclude=["/", "/login", "/logout", "/static", "/schema", "/favicon.ico"],
+    # 注意：exclude 按正则做 re.search，切勿放裸 "/"——
+    # 它会匹配所有路径从而停用鉴权中间件。时间轴首页由处理器自行跳转登录。
+    exclude=[r"^/login", r"^/logout", r"^/static", r"^/schema", r"^/favicon\.ico"],
 )

@@ -1,8 +1,19 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -54,6 +65,10 @@ class Clamp(Base):
         back_populates="clamp",
         cascade="all, delete-orphan",
     )
+    permits: Mapped[list[IgnitionPermit]] = relationship(
+        back_populates="clamp",
+        cascade="all, delete-orphan",
+    )
 
 
 class BurnShift(Base):
@@ -67,3 +82,30 @@ class BurnShift(Base):
     notes: Mapped[str] = mapped_column(Text, nullable=False, default="")
 
     clamp: Mapped[Clamp] = relationship(back_populates="shifts")
+
+
+class IgnitionPermit(Base):
+    """点火许可帖：已码窑进入焖烧中前须持一张未核销帖。"""
+
+    __tablename__ = "ignition_permits"
+    __table_args__ = (
+        # 许可编号全坞唯一
+        UniqueConstraint("permit_no", name="uq_ignition_permit_no"),
+        # 同一窑在未核销期间不得存在第二张：只对未核销行建唯一索引
+        Index(
+            "uq_open_permit_per_clamp",
+            "clamp_id",
+            unique=True,
+            postgresql_where=text("revoked_at IS NULL"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    clamp_id: Mapped[int] = mapped_column(ForeignKey("clamps.id"), nullable=False)
+    opened_on: Mapped[date] = mapped_column(Date, nullable=False)
+    permit_no: Mapped[str] = mapped_column(String(8), nullable=False)
+    duty_admin_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    clamp: Mapped[Clamp] = relationship(back_populates="permits")
+    duty_admin: Mapped[User] = relationship()

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}点火许可{% endblock %}
+{% block site_label %}乌石岗焖烧坞{% endblock %}
+
+{% block content %}
+<section class="permit-page">
+  <header class="timeline-head">
+    <div>
+      <h1>点火许可帖</h1>
+      <p>
+        已码窑进入焖烧中前须持一张未核销帖；登记首笔班次时在<strong>同一事务</strong>内核销并改窑态。
+        当前未核销帖 <strong class="permit-count">{{ open_count }}</strong> 张，与时间轴「待点火」窑数一致。
+      </p>
+    </div>
+    <div class="filter-tabs" role="tablist" aria-label="许可筛选">
+      <a class="btn {% if only_open %}is-tab-active{% else %}ghost{% endif %}" href="/permits?status=open">未核销（{{ open_count }}）</a>
+      <a class="btn {% if not only_open %}is-tab-active{% else %}ghost{% endif %}" href="/permits?status=all">全部</a>
+    </div>
+  </header>
+
+  {% if is_admin %}
+  <form class="permit-new card" method="post" action="/permits/new">
+    <h2>新建点火许可帖</h2>
+    <div class="permit-new-grid">
+      <label>炭窑（仅已码窑）
+        <select name="clamp_id" required>
+          {% for clamp in stacked_clamps %}
+          <option value="{{ clamp.id }}">
+            {{ clamp.code }}{% if clamp.id in open_permit_clamp_ids %}（已有未核销帖）{% endif %}
+          </option>
+          {% else %}
+          <option value="" disabled>暂无可开帖的已码窑</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>开帖日
+        <input name="opened_on" type="date" value="{{ today }}" required />
+      </label>
+      <label>许可编号（4–8 位数字，全坞唯一）
+        <input name="permit_no" inputmode="numeric" pattern="[0-9]{4,8}" maxlength="8" placeholder="如 0427" required />
+      </label>
+      <label>值班管理员
+        <select name="duty_admin_id" required>
+          {% for admin in admins %}
+          <option value="{{ admin.id }}" {% if admin.id == user.id %}selected{% endif %}>{{ admin.username }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <p class="hint">同一窑未核销期间只许一张帖；并发开帖时数据库只放行一张。</p>
+    <div class="actions">
+      <button type="submit">开帖</button>
+    </div>
+  </form>
+  {% else %}
+  <p class="hint permit-note">当前为操作工账号，仅可查看；开帖与核销由值班管理员完成。</p>
+  {% endif %}
+
+  <ul class="permit-list">
+    {% for permit in permits %}
+    <li class="permit-card card {% if permit.revoked_at %}is-revoked{% else %}is-open{% endif %}">
+      <div class="permit-card-main">
+        <span class="permit-no">{{ permit.permit_no }}</span>
+        <span class="badge badge-{{ permit.clamp.status }}">{{ permit.clamp.code }}</span>
+        <span class="permit-state">
+          {% if permit.revoked_at %}
+            <span class="state-revoked">已核销 · {{ permit.revoked_at.strftime('%Y-%m-%d %H:%M') }}</span>
+          {% else %}
+            <span class="state-open">待点火 · 未核销</span>
+          {% endif %}
+        </span>
+      </div>
+      <dl class="permit-meta">
+        <div><dt>开帖日</dt><dd>{{ permit.opened_on.strftime('%Y-%m-%d') }}</dd></div>
+        <div><dt>值班管理员</dt><dd>{{ permit.duty_admin.username }}</dd></div>
+        <div><dt>窑场</dt><dd>{{ permit.clamp.site.name }}</dd></div>
+      </dl>
+      {% if not permit.revoked_at and is_admin %}
+      <form method="post" action="/permits/{{ permit.id }}/revoke" class="permit-revoke">
+        <button type="submit" class="btn ghost">管理员核销</button>
+      </form>
+      {% endif %}
+    </li>
+    {% else %}
+    <li class="timeline-empty">
+      <p>{% if only_open %}当前没有未核销点火许可帖。{% else %}暂无点火许可帖。{% endif %}</p>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

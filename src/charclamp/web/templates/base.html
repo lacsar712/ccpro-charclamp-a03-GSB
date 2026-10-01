@@ -18,6 +18,15 @@
         </div>
       </div>
       <div class="topbar-actions">
+        {% if user %}
+        <nav class="topnav" aria-label="主导航">
+          <a class="nav-link" href="/">时间轴</a>
+          <a class="nav-link" href="/permits">
+            点火许可
+            {% if open_permit_count %}<span class="nav-badge">{{ open_permit_count }}</span>{% endif %}
+          </a>
+        </nav>
+        {% endif %}
         {% block top_actions %}{% endblock %}
         {% if user %}
         <a class="link-quiet" href="/logout">退出 {{ user.username }}</a>

@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
-from charclamp.domain.models import BurnShift, Clamp
+import re
+from datetime import datetime
+
+from charclamp.domain.models import BurnShift, Clamp, IgnitionPermit
 
 MIN_PEAK_TEMP_FOR_DRAWN = 400.0
+
+# 许可编号：4 到 8 位数字
+PERMIT_NO_PATTERN = re.compile(r"^\d{4,8}$")
 
 
 class RuleError(ValueError):
@@ -43,3 +49,57 @@ def assert_can_set_clamp_status(clamp: Clamp, new_status: str) -> None:
         ok, msg = can_mark_clamp_drawn(clamp)
         if not ok:
             raise RuleError(msg)
+
+
+def validate_permit_no(permit_no: str) -> str:
+    """许可编号必须为 4 到 8 位数字，全坞唯一由数据库约束兜底。"""
+    permit_no = (permit_no or "").strip()
+    if not PERMIT_NO_PATTERN.match(permit_no):
+        raise RuleError("许可编号须为 4 到 8 位数字")
+    return permit_no
+
+
+def find_open_permit(permits: list[IgnitionPermit]) -> IgnitionPermit | None:
+    """返回该窑当前未核销的点火许可帖。"""
+    for permit in permits:
+        if permit.revoked_at is None:
+            return permit
+    return None
+
+
+def assert_can_open_permit(
+    clamp: Clamp, permits: list[IgnitionPermit] | None = None
+) -> None:
+    """仅已码窑可开帖；未核销期间同一窑不得再开第二张。"""
+    if clamp is None:
+        raise RuleError("炭窑不存在")
+    if clamp.status != Clamp.STATUS_STACKED:
+        raise RuleError("仅已码窑可开点火许可帖")
+    if permits is None:
+        permits = list(clamp.permits)
+    if find_open_permit(permits) is not None:
+        raise RuleError("该窑已有未核销点火许可帖，核销前不得再开")
+
+
+def assert_can_revoke_permit(permit: IgnitionPermit | None) -> None:
+    if permit is None:
+        raise RuleError("点火许可帖不存在")
+    if permit.revoked_at is not None:
+        raise RuleError("该帖已核销，无需重复核销")
+
+
+def consume_permit_for_first_shift(
+    clamp: Clamp,
+    permits: list[IgnitionPermit],
+    now: datetime,
+) -> IgnitionPermit:
+    """
+    已码窑写入第一笔班次时的许可校验：
+    必须存在未核销帖，并由调用方在同一事务内写入核销时刻。
+    焖烧中窑追加班次无需调用本函数。
+    """
+    permit = find_open_permit(list(permits))
+    if permit is None:
+        raise RuleError("该已码窑尚无未核销点火许可帖，不能登记首笔班次")
+    permit.revoked_at = now
+    return permit

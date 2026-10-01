@@ -16,26 +16,33 @@
     </span>
   </a>
   {% for clamp in clamps %}
+  {% set open_permit = open_permits_by_clamp.get(clamp.id) %}
   <a
-    class="kiln-chip status-{{ clamp.status }} {% if active_clamp_id == clamp.id %}is-active{% endif %}"
+    class="kiln-chip status-{{ clamp.status }} {% if open_permit %}has-permit{% endif %} {% if active_clamp_id == clamp.id %}is-active{% endif %}"
     href="/?clamp_id={{ clamp.id }}"
     hx-get="/timeline/partial?clamp_id={{ clamp.id }}"
     hx-target="#board"
     hx-swap="innerHTML"
     hx-push-url="/?clamp_id={{ clamp.id }}"
-    title="{{ status_labels.get(clamp.status, clamp.status) }}"
+    title="{{ status_labels.get(clamp.status, clamp.status) }}{% if open_permit %} · 待点火（许可 {{ open_permit.permit_no }}）{% endif %}"
   >
     <span class="kiln-svg" aria-hidden="true">
       <svg viewBox="0 0 48 56" width="44" height="50">
         <path class="kiln-body" d="M10 50 L15 22 Q24 8 33 22 L38 50 Z" />
         <path class="kiln-mouth" d="M20 50 V28 Q24 22 28 28 V50" />
         <circle class="kiln-glow" cx="24" cy="34" r="4" />
+        {% if open_permit %}
+        <path class="kiln-spark" d="M24 4 l0 5 M18 7 l3 4 M30 7 l-3 4" />
+        {% endif %}
         <text x="24" y="14" text-anchor="middle" class="kiln-code-svg">{{ clamp.code[-1] }}</text>
       </svg>
     </span>
     <span class="kiln-meta">
       <strong>{{ clamp.code }}</strong>
-      <em>{{ status_labels.get(clamp.status, clamp.status) }} · {{ clamp.wood_species or '—' }}</em>
+      <em>
+        {% if open_permit %}待点火 · 许可 {{ open_permit.permit_no }}{% else %}{{ status_labels.get(clamp.status, clamp.status) }}{% endif %}
+        · {{ clamp.wood_species or '—' }}
+      </em>
     </span>
   </a>
   {% endfor %}
@@ -44,7 +51,10 @@
 <header class="timeline-head">
   <div>
     <h1>焖烧时间轴</h1>
-    <p>点击上方窑剪影筛选班次；登记与出炭在侧抽屉完成，不另开列表页。</p>
+    <p>
+      点击上方窑剪影筛选班次；登记与出炭在侧抽屉完成，不另开列表页。
+      {% if open_permit_count %}当前有 <strong>{{ open_permit_count }}</strong> 座已码窑持未核销帖、待点火。{% endif %}
+    </p>
   </div>
   {% if active_clamp_id %}
   <button
