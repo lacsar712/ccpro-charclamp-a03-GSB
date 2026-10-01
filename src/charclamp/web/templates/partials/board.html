@@ -16,14 +16,15 @@
     </span>
   </a>
   {% for clamp in clamps %}
+  {% set open_n = open_permit_counts.get(clamp.id, 0) %}
   <a
-    class="kiln-chip status-{{ clamp.status }} {% if active_clamp_id == clamp.id %}is-active{% endif %}"
+    class="kiln-chip status-{{ clamp.status }} {% if open_n %}has-open-permit{% endif %} {% if active_clamp_id == clamp.id %}is-active{% endif %}"
     href="/?clamp_id={{ clamp.id }}"
     hx-get="/timeline/partial?clamp_id={{ clamp.id }}"
     hx-target="#board"
     hx-swap="innerHTML"
     hx-push-url="/?clamp_id={{ clamp.id }}"
-    title="{{ status_labels.get(clamp.status, clamp.status) }}"
+    title="{{ status_labels.get(clamp.status, clamp.status) }}{% if open_n %} · 待点火（未核销许可 {{ open_n }} 张）{% endif %}"
   >
     <span class="kiln-svg" aria-hidden="true">
       <svg viewBox="0 0 48 56" width="44" height="50">
@@ -32,10 +33,11 @@
         <circle class="kiln-glow" cx="24" cy="34" r="4" />
         <text x="24" y="14" text-anchor="middle" class="kiln-code-svg">{{ clamp.code[-1] }}</text>
       </svg>
+      {% if open_n %}<span class="kiln-ready-tag" aria-label="待点火">待点火</span>{% endif %}
     </span>
     <span class="kiln-meta">
       <strong>{{ clamp.code }}</strong>
-      <em>{{ status_labels.get(clamp.status, clamp.status) }} · {{ clamp.wood_species or '—' }}</em>
+      <em>{{ status_labels.get(clamp.status, clamp.status) }}{% if open_n %} · 待点火{% endif %} · {{ clamp.wood_species or '—' }}</em>
     </span>
   </a>
   {% endfor %}

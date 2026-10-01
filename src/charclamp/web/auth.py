@@ -23,5 +23,9 @@ session_auth = SessionAuth[User, ServerSideSessionBackend](
     session_backend_config=ServerSideSessionConfig(
         session_id_bytes=32,
     ),
-    exclude=["/", "/login", "/logout", "/static", "/schema", "/favicon.ico"],
+    # 注意：Litestar 会把 exclude 列表用 "|" 拼成正则并做前缀匹配，
+    # 因此不能放 "/"——那会匹配所有路径，使中间件在每条路由上被跳过、
+    # request.user 从不注入（登录后全站 500）。"/" 时间轴是登录后页面，
+    # 未登录由 NotAuthorizedException -> /login 重定向处理。
+    exclude=["/login", "/logout", "/static", "/schema", "/favicon.ico"],
 )

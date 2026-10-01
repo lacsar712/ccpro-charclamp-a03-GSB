@@ -40,6 +40,7 @@ def seed_demo() -> None:
         session.flush()
 
         now = utcnow()
+        # 坞东-乙 保持「已码窑、无点火许可帖、无班次」：作为开帖→首班→焖烧的演示起点。
         session.add_all(
             [
                 BurnShift(
@@ -48,13 +49,6 @@ def seed_demo() -> None:
                     peak_temp_c=455.0,
                     charcoal_grade="A",
                     notes="峰值已过，可出炭",
-                ),
-                BurnShift(
-                    clamp=c2,
-                    started_at=now - timedelta(hours=3),
-                    peak_temp_c=None,
-                    charcoal_grade="B",
-                    notes="刚点火，未测峰值",
                 ),
                 BurnShift(
                     clamp=c3,

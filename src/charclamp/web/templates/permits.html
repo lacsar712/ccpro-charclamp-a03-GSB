@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}点火许可帖{% endblock %}
+{% block site_label %}乌石岗焖烧坞{% endblock %}
+
+{% block content %}
+<section class="permit-page">
+  <header class="timeline-head">
+    <div>
+      <h1>点火许可帖</h1>
+      <p>
+        已码窑登记第一笔焖烧班次前须持一张未核销帖；登记班次时在<strong>同一事务</strong>写入核销时刻、班次入库并把窑态改为焖烧中。
+        当前未核销 <strong class="ready-count">{{ open_permit_total }}</strong> 张，与时间轴窑剪影「待点火」对账一致。
+      </p>
+    </div>
+    <div class="filter-toggle">
+      <a class="btn ghost {% if open_only %}is-active-filter{% endif %}" href="/permits?open=1">仅未核销</a>
+      <a class="btn ghost {% if not open_only %}is-active-filter{% endif %}" href="/permits">全部帖</a>
+    </div>
+  </header>
+
+  {% if is_admin %}
+  <form class="permit-new card" method="post" action="/permits/new">
+    <h2>新开点火许可帖</h2>
+    <p class="hint">仅已码窑可开帖；同一窑未核销期间不得再开第二张。编号全坞唯一，为 4–8 位数字。</p>
+    <div class="permit-new-grid">
+      <label>炭窑（已码窑）
+        <select name="clamp_id" required>
+          {% for clamp in clamps %}
+          <option value="{{ clamp.id }}"
+            {% if clamp.status != 'stacked' %}disabled{% endif %}>
+            {{ clamp.code }} · {{ status_labels.get(clamp.status, clamp.status) }}{% if open_permit_counts.get(clamp.id, 0) %} · 已有未核销帖{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>开帖日
+        <input name="opened_on" type="date" value="{{ today }}" required />
+      </label>
+      <label>许可编号
+        <input name="permit_code" inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8"
+               placeholder="如 1024" required />
+      </label>
+      <label>值班管理员
+        <select name="duty_admin_id" required>
+          {% for admin in admins %}
+          <option value="{{ admin.id }}" {% if admin.id == user.id %}selected{% endif %}>{{ admin.username }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <div class="actions">
+      <button type="submit">开帖</button>
+    </div>
+  </form>
+  {% else %}
+  <p class="hint card">当前为操作工账号：可查看许可帖，开帖与核销仅值班管理员可操作。</p>
+  {% endif %}
+
+  <div class="table-wrap card">
+    <table class="permit-table">
+      <thead>
+        <tr>
+          <th>许可编号</th>
+          <th>炭窑</th>
+          <th>开帖日</th>
+          <th>值班管理员</th>
+          <th>状态</th>
+          <th>核销时刻</th>
+          {% if is_admin %}<th>操作</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in permits %}
+        <tr class="{% if p.consumed_at %}is-consumed{% else %}is-open{% endif %}">
+          <td class="mono">{{ p.permit_code }}</td>
+          <td>{{ p.clamp.code }} <span class="badge badge-{{ p.clamp.status }}">{{ status_labels.get(p.clamp.status, p.clamp.status) }}</span></td>
+          <td>{{ p.opened_on.isoformat() }}</td>
+          <td>{{ p.duty_admin.username }}</td>
+          <td>
+            {% if p.consumed_at %}
+            <span class="permit-state state-consumed">已核销</span>
+            {% else %}
+            <span class="permit-state state-open">待点火 · 未核销</span>
+            {% endif %}
+          </td>
+          <td class="mono">{% if p.consumed_at %}{{ p.consumed_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}</td>
+          {% if is_admin %}
+          <td>
+            {% if not p.consumed_at %}
+            <form method="post" action="/permits/{{ p.id }}/consume" onsubmit="return confirm('确定由管理员核销许可 {{ p.permit_code }}？');">
+              <button type="submit" class="btn small">管理员核销</button>
+            </form>
+            {% else %}—{% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr><td colspan="{% if is_admin %}7{% else %}6{% endif %}" class="table-empty">{% if open_only %}当前没有未核销许可帖。{% else %}尚无许可帖。{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
